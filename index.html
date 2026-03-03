@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Park Hyatt Executive Concierge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <p class="eyebrow">Hyatt South Africa Collection</p>
+        <h1>Executive Concierge</h1>
+        <p class="description">
+          Curated recommendations for dining, culture, and signature city moments within 5km of your selected Hyatt property.
+        </p>
+      </header>
+
+      <section class="controls" aria-label="Property picker">
+        <label for="property-select">Choose a property</label>
+        <form id="property-form" class="picker-row" method="get">
+          <select id="property-select" name="property"></select>
+          <button id="apply-property" type="submit" class="apply-property">Apply</button>
+        </form>
+        <div id="property-quick-switch" class="property-quick-switch" aria-label="Quick property switch"></div>
+        <p class="helper-text">If the dropdown is unresponsive in preview, use the quick links above or press Apply.</p>
+      </section>
+
+      <section class="stats" aria-live="polite">
+        <div>
+          <span id="property-name">—</span>
+          <p>Current property</p>
+        </div>
+        <div>
+          <span id="venue-count">0</span>
+          <p>Open experiences</p>
+        </div>
+        <div>
+          <span>5km</span>
+          <p>Discovery radius</p>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <h2>Available experiences</h2>
+          <p>Sorted by live Google rating quality score.</p>
+        </div>
+        <div id="results" class="results"></div>
+      </section>
+    </main>
+
+    <template id="category-template">
+      <article class="category-block">
+        <h3></h3>
+        <ul></ul>
+      </article>
+    </template>
+
+    <template id="venue-template">
+      <li class="venue-card">
+        <img class="venue-photo" alt="" loading="eager" decoding="sync" referrerpolicy="no-referrer" />
+        <div class="venue-content">
+          <div class="venue-head">
+            <h4></h4>
+            <span class="distance"></span>
+          </div>
+          <p class="meta"></p>
+          <p class="tripadvisor"></p>
+          <p class="availability"></p>
+          <div class="actions">
+            <a class="booking-link" target="_blank" rel="noopener noreferrer">Book / Reserve</a>
+            <a class="maps-link" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
+          </div>
+        </div>
+      </li>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
