@@ -1,0 +1,5 @@
+property_code,gid,surname,full_names,id_number,passport_number,date_of_birth,race,gender,job_title,department,operational_division,active,admin_level
+CPTRC,4834276,Abrahams,Shameemah,8810210227082,,1988-10-21,Coloured,Female,Room Attendant,Housekeeping,Housekeeping,Y,N
+JOHPJ,4796033,Aidoo,Abeiku,,G3505713,1984-09-28,African,Male,Night Auditor,Front Office,Front Office,Y,N
+NBODO,4788671,Chetty,Neesan,9302255125081,,1993-02-25,Indian,Male,HR Director,Human Resources,HR,Y,G
+JOHPJ,4789758,Gemmell,Mitch,8412215090084,,1984-12-21,White,Male,General Manager,Executive,Administration,Y,GM
