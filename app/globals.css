@@ -1,0 +1,24 @@
+:root {
+  --bg: #f5f4f2;
+  --surface: #ffffff;
+  --text: #1d1d1d;
+  --muted: #67635f;
+  --line: #e6e2dd;
+  --accent: #2e3a2f;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+main { max-width: 900px; margin: 0 auto; padding: 24px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; box-shadow: 0 6px 18px rgba(17,17,17,0.05); }
+button { border-radius: 10px; border: 1px solid var(--line); padding: 12px 16px; background: #fff; }
+button.primary { background: var(--accent); color: #fff; }
+input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+.grid { display: grid; gap: 14px; }
+.kpi { font-size: 2rem; font-weight: 600; }
+.nav-grid { display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:12px; }
+@media (max-width:640px){ .nav-grid{grid-template-columns:1fr;} }
