@@ -8,6 +8,7 @@ create table if not exists properties (
   updated_at timestamptz not null default now()
 );
 
+-- Legacy table kept for compatibility only.
 create table if not exists operational_divisions (
   id uuid primary key default gen_random_uuid(),
   property_id uuid not null references properties(id),
@@ -31,7 +32,8 @@ create table if not exists colleagues (
   last_name text not null,
   email text,
   property_id uuid not null references properties(id),
-  division_id uuid not null references operational_divisions(id),
+  division_id uuid references operational_divisions(id), -- legacy compatibility
+  department text, -- new canonical field (enforced later in 003/004)
   job_title_id uuid not null references job_titles(id),
   admin_level text not null check (admin_level in ('N','P','G','GA','GM')),
   active boolean not null default true,
@@ -55,7 +57,8 @@ create table if not exists training_types (
 create table if not exists training_sessions (
   id uuid primary key,
   property_id uuid not null references properties(id),
-  division_id uuid not null references operational_divisions(id),
+  division_id uuid references operational_divisions(id), -- legacy compatibility
+  department text, -- new canonical field (filled by app / later migration)
   training_type_id uuid not null references training_types(id),
   title varchar(90) not null,
   description varchar(256),
@@ -109,8 +112,10 @@ create table if not exists sync_conflicts (
 
 create index if not exists idx_colleagues_property on colleagues(property_id);
 create index if not exists idx_colleagues_division on colleagues(division_id);
+create index if not exists idx_colleagues_department on colleagues(department);
 create index if not exists idx_sessions_property on training_sessions(property_id);
 create index if not exists idx_sessions_division on training_sessions(division_id);
+create index if not exists idx_sessions_department on training_sessions(department);
 create index if not exists idx_sessions_type on training_sessions(training_type_id);
 create index if not exists idx_sessions_date on training_sessions(training_date);
 create index if not exists idx_attendees_colleague on session_attendees(colleague_id);
@@ -125,15 +130,28 @@ alter table session_attendees enable row level security;
 alter table audit_logs enable row level security;
 alter table sync_conflicts enable row level security;
 
-create policy "authenticated read masters" on properties for select to authenticated using (true);
-create policy "authenticated read divisions" on operational_divisions for select to authenticated using (true);
-create policy "authenticated read job_titles" on job_titles for select to authenticated using (true);
-create policy "authenticated read types" on training_types for select to authenticated using (deleted_at is null);
+drop policy if exists "authenticated read masters" on properties;
+create policy "authenticated read masters" on properties
+for select to authenticated using (true);
 
+drop policy if exists "authenticated read divisions" on operational_divisions;
+create policy "authenticated read divisions" on operational_divisions
+for select to authenticated using (true);
+
+drop policy if exists "authenticated read job_titles" on job_titles;
+create policy "authenticated read job_titles" on job_titles
+for select to authenticated using (true);
+
+drop policy if exists "authenticated read types" on training_types;
+create policy "authenticated read types" on training_types
+for select to authenticated using (deleted_at is null);
+
+drop policy if exists "ga manage training types" on training_types;
 create policy "ga manage training types" on training_types for all to authenticated
 using (exists (select 1 from colleagues c where c.id = auth.uid() and c.admin_level = 'GA'))
 with check (exists (select 1 from colleagues c where c.id = auth.uid() and c.admin_level = 'GA'));
 
+drop policy if exists "gm read all sessions" on training_sessions;
 create policy "gm read all sessions" on training_sessions for select to authenticated
 using (exists (select 1 from colleagues c where c.id = auth.uid() and c.admin_level in ('GM','G','GA','P','N')));
 
@@ -158,19 +176,29 @@ begin
     return;
   end if;
 
-  insert into training_sessions(id, property_id, division_id, training_type_id, title, description, facilitator_gid, facilitator_name, training_date, start_time, end_time, client_updated_at)
+  insert into training_sessions(
+    id, property_id, division_id, department, training_type_id, title, description,
+    facilitator_gid, facilitator_name, training_date, start_time, end_time, client_updated_at
+  )
   values (
     (payload->>'id')::uuid,
     (payload->>'property_id')::uuid,
-    (payload->>'division_id')::uuid,
+    nullif(payload->>'division_id','')::uuid,
+    nullif(payload->>'department',''),
     (payload->>'training_type_id')::uuid,
-    payload->>'title', payload->>'description', payload->>'facilitator_gid', payload->>'facilitator_name',
-    (payload->>'training_date')::date, (payload->>'start_time')::time, (payload->>'end_time')::time,
+    payload->>'title',
+    payload->>'description',
+    payload->>'facilitator_gid',
+    payload->>'facilitator_name',
+    (payload->>'training_date')::date,
+    (payload->>'start_time')::time,
+    (payload->>'end_time')::time,
     incoming_ts
   )
   on conflict (id) do update set
     property_id = excluded.property_id,
     division_id = excluded.division_id,
+    department = excluded.department,
     training_type_id = excluded.training_type_id,
     title = excluded.title,
     description = excluded.description,
@@ -188,7 +216,8 @@ begin
   loop
     select id into c_id from colleagues where gid = att and active = true;
     if c_id is not null then
-      insert into session_attendees(session_id, colleague_id) values ((payload->>'id')::uuid, c_id)
+      insert into session_attendees(session_id, colleague_id)
+      values ((payload->>'id')::uuid, c_id)
       on conflict(session_id, colleague_id) do nothing;
     end if;
   end loop;
