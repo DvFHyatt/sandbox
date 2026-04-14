@@ -16,6 +16,7 @@ type Props = {
 export function CaptureForm({ properties, colleagues, trainingTypes, isSu }: Props) {
   const [propertyCode, setPropertyCode] = useState(properties[0]?.propertyCode ?? '');
   const [department, setDepartment] = useState('');
+  const [selectedAttendeeIds, setSelectedAttendeeIds] = useState<string[]>([]);
 
   const departmentOptions = useMemo(() => {
     const unique = new Set(
@@ -28,10 +29,23 @@ export function CaptureForm({ properties, colleagues, trainingTypes, isSu }: Pro
   }, [colleagues, propertyCode]);
 
   const attendeeOptions = useMemo(
-    () =>
-      colleagues.filter((c) => c.propertyCode === propertyCode && c.department === department),
+    () => colleagues.filter((c) => c.propertyCode === propertyCode && c.department === department),
     [colleagues, propertyCode, department]
   );
+
+  function toggleAttendee(id: string) {
+    setSelectedAttendeeIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
+
+  function selectAllInDepartment() {
+    setSelectedAttendeeIds(attendeeOptions.map((a) => a.id));
+  }
+
+  function clearSelection() {
+    setSelectedAttendeeIds([]);
+  }
 
   return (
     <form action='/api/capture' method='post' className='card space-y-2'>
@@ -46,6 +60,7 @@ export function CaptureForm({ properties, colleagues, trainingTypes, isSu }: Pro
             onChange={(e) => {
               setPropertyCode(e.target.value);
               setDepartment('');
+              setSelectedAttendeeIds([]);
             }}
             className='border p-2 rounded w-full mt-1'
             required
@@ -73,7 +88,10 @@ export function CaptureForm({ properties, colleagues, trainingTypes, isSu }: Pro
         <select
           name='department'
           value={department}
-          onChange={(e) => setDepartment(e.target.value)}
+          onChange={(e) => {
+            setDepartment(e.target.value);
+            setSelectedAttendeeIds([]);
+          }}
           className='border p-2 rounded w-full mt-1'
           required
         >
@@ -108,17 +126,56 @@ export function CaptureForm({ properties, colleagues, trainingTypes, isSu }: Pro
       <input name='trainingTitle' maxLength={90} className='border p-2 rounded w-full' placeholder='Training title' required />
       <input name='trainingDescription' maxLength={256} className='border p-2 rounded w-full' placeholder='Description' required />
       <input name='facilitatorName' className='border p-2 rounded w-full' placeholder='Facilitator name' required />
-      <input name='facilitatorGid' className='border p-2 rounded w-full' placeholder='Facilitator GID (optional)' />
 
       <div className='border rounded p-2'>
-        <p className='text-sm font-medium mb-2'>Attendees</p>
+        <div className='flex items-center justify-between mb-2'>
+          <p className='text-sm font-medium'>Attendees</p>
+          <div className='flex gap-2'>
+            <button
+              type='button'
+              onClick={selectAllInDepartment}
+              className='border rounded px-2 py-1 text-xs'
+              disabled={attendeeOptions.length === 0}
+            >
+              Select all in department
+            </button>
+            <button
+              type='button'
+              onClick={clearSelection}
+              className='border rounded px-2 py-1 text-xs'
+              disabled={selectedAttendeeIds.length === 0}
+            >
+              Clear selection
+            </button>
+          </div>
+        </div>
+
         <div className='max-h-48 overflow-auto space-y-1'>
           {attendeeOptions.length === 0 ? (
             <p className='text-sm text-brand-muted'>Select property and department to load attendees.</p>
           ) : (
             attendeeOptions.map((c) => (
-              <label key={c.id} className='block text-sm'>
-                <input type='checkbox' name='attendeeIds' value={c.id} /> {c.surname}, {c.fullNames}
+              <label
+                key={c.id}
+                className='text-sm'
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '24px 1fr',
+                  alignItems: 'center',
+                  gap: 10,
+                  minHeight: 32,
+                  cursor: 'pointer'
+                }}
+              >
+                <input
+                  type='checkbox'
+                  name='attendeeIds'
+                  value={c.id}
+                  checked={selectedAttendeeIds.includes(c.id)}
+                  onChange={() => toggleAttendee(c.id)}
+                  style={{ margin: 0, width: 18, height: 18, alignSelf: 'center' }}
+                />
+                {c.surname}, {c.fullNames}
               </label>
             ))
           )}
